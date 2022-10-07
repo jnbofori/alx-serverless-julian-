@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import 'source-map-support/register'
 import { getUserId } from '../utils'
-import { todoExists, updateTodoAttachmentUrl, timeInMs, logMetric } from '../../helpers/todos'
+import { todoExists, updateTodoAttachmentUrl, timeInMs, logMetric } from '../../businessLogic/todos'
 import { getUploadUrl } from '../../helpers/attachmentUtils'
 import { createLogger } from '../../utils/logger'
 

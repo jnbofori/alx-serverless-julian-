@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import 'source-map-support/register'
-import { getAllUserTodos, timeInMs, logMetric } from '../../helpers/todos'
+import { getAllUserTodos, timeInMs, logMetric } from '../../businessLogic/todos'
 import { createLogger } from '../../utils/logger'
 
 const logger = createLogger('TodosAccess')
