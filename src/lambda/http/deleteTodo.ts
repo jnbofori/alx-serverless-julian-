@@ -1,17 +1,13 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import 'source-map-support/register'
-import * as AWS  from 'aws-sdk'
 import { getUserId } from '../utils'
+import { deleteTodo, todoExists } from '../../helpers/todos'
 
-const docClient = new AWS.DynamoDB.DocumentClient()
-
-const todosTable = process.env.TODOS_TABLE
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 
   console.log('Deleting item', event)
   const todoId = event.pathParameters.todoId
-
   const userId = getUserId(event);
 
   const validTodoId = await todoExists(todoId, userId)
@@ -28,7 +24,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     }
   }
 
-  const todo = await deleteTodoItem(todoId, userId)
+  const todo = await deleteTodo(event, todoId)
 
   return {
     statusCode: 201,
@@ -39,33 +35,4 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
       items: todo
     })
   }
-}
-
-async function todoExists(todoId: string, userId: string) {
-  const result = await docClient
-    .get({
-      TableName: todosTable,
-      Key: {
-        todoId,
-        userId
-      }
-    })
-    .promise()
-
-  console.log('Todo to delete: ', result)
-  return !!result.Item
-}
-
-async function deleteTodoItem(todoId: string, userId: string) {
-  const result = await docClient.delete({
-    TableName: todosTable,
-    Key: {
-      todoId,
-      userId
-    },
-    ReturnValues: "ALL_OLD"
-  }).promise()
-
-  console.log('Deleted todo: ', result)
-  return result
 }

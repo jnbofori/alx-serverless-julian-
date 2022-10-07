@@ -1,17 +1,12 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import 'source-map-support/register'
-import * as AWS  from 'aws-sdk'
 import { getUserId } from '../utils'
+import { updateTodo, todoExists } from '../../helpers/todos'
 
-const docClient = new AWS.DynamoDB.DocumentClient()
-
-const todosTable = process.env.TODOS_TABLE
-const bucketName = process.env.ATTACHMENT_S3_BUCKET
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   console.log('Updating item', event)
   const todoId = event.pathParameters.todoId
-
   const userId = getUserId(event);
 
   const parsedBody = JSON.parse(event.body)
@@ -30,14 +25,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     }
   }
 
-  const updateItem = {
-    todoId,
-    userId,
-    attachmentUrl: `https://${bucketName}.s3.amazonaws.com/${todoId}`,
-    ...parsedBody
-  }
-
-  const todo = await updateTodoItem(updateItem)
+  const todo = await updateTodo(parsedBody, event, todoId)
 
   return {
     statusCode: 201,
@@ -48,29 +36,4 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
       items: todo
     })
   }
-}
-
-async function todoExists(todoId: string, userId: string) {
-  const result = await docClient
-    .get({
-      TableName: todosTable,
-      Key: {
-        todoId,
-        userId
-      }
-    })
-    .promise()
-
-  console.log('Todo to update: ', result)
-  return !!result.Item
-}
-
-async function updateTodoItem(updateItem: { todoId: string, userId: string, name: string, dueDate: string, done: boolean }) {
-  const result = await docClient.put({
-    TableName: todosTable,
-    Item: updateItem
-  }).promise()
-
-  console.log('Updated todo: ', result)
-  return result
 }
