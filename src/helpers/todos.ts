@@ -1,14 +1,12 @@
 import { TodosAccess } from './todosAcess'
-// import { AttachmentUtils } from './attachmentUtils';
 import { TodoItem } from '../models/TodoItem'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
-// import { createLogger } from '../utils/logger'
+import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
 import { APIGatewayProxyEvent } from "aws-lambda";
-// import * as createError from 'http-errors'
 
-// const logger = createLogger('TodosAccess')
+const logger = createLogger('TodosAccess')
 // TODO: Implement businessLogic
 
 import { getUserId } from '../lambda/utils'
@@ -19,7 +17,7 @@ const todoAccess = new TodosAccess()
 
 export async function getAllUserTodos(event: APIGatewayProxyEvent): Promise<TodoItem[]> {
   const userId = getUserId(event)
-  // logger.info('Token user: ', userId)
+  logger.info('Token user: ', { userId })
   return todoAccess.getAllUserTodos(userId)
 }
 
@@ -69,4 +67,12 @@ export async function todoExists(todoId: string, userId: string): Promise<boolea
 
 export async function updateTodoAttachmentUrl(todoId: string, userId: string): Promise<void> {
   return todoAccess.updateTodoAttachmentUrl(todoId, userId)
+}
+
+export function logMetric(totalTime: number, service: string): Promise<void> {
+  return todoAccess.logMetric(totalTime, service)
+}
+
+export function timeInMs() {
+  return new Date().getTime()
 }

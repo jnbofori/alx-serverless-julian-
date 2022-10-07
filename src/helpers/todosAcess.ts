@@ -1,24 +1,24 @@
 import * as AWS from 'aws-sdk'
-// import * as AWSXRay from 'aws-xray-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
-// import { createLogger } from '../utils/logger'
+import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate';
 
-// const XAWS: any = AWSXRay.captureAWS(AWS)
 
-// const logger = createLogger('TodosAccess')
+const logger = createLogger('TodosAccess')
 // TODO: Implement the dataLayer logic
 export class TodosAccess {
 
 constructor(
     private readonly docClient: DocumentClient = new AWS.DynamoDB.DocumentClient(),
+    private readonly cloudWatch = new AWS.CloudWatch(),
     private readonly todosTable = process.env.TODOS_TABLE,
-    private readonly attachmentsBucket = process.env.ATTACHMENT_S3_BUCKET) {
+    private readonly attachmentsBucket = process.env.ATTACHMENT_S3_BUCKET,
+    private readonly serviceName = process.env.SERVICE_NAME) {
   }
 
   async getAllUserTodos(userId: string): Promise<TodoItem[]> {
-    // logger.info('Getting all todos')
+    logger.info('Getting all todos')
 
     const result = await this.docClient.query({
       TableName: this.todosTable,
@@ -39,7 +39,7 @@ constructor(
       Item: todoItem
     }).promise()
 
-    // logger.log('Created new todo: ', todoItem)
+    logger.log('Created new todo: ', {todoItem})
     return todoItem;
   }
 
@@ -49,7 +49,7 @@ constructor(
       Item: updateItem
     }).promise()
   
-    // logger.log('Updated todo: ', result)
+    logger.log('Updated todo: ', {result})
     return result
   }
 
@@ -63,7 +63,7 @@ constructor(
       ReturnValues: "ALL_OLD"
     }).promise()
   
-    // logger.log('Deleted todo: ', result)
+    logger.log('Deleted todo: ', {result})
     return result
   }
 
@@ -78,7 +78,7 @@ constructor(
       })
       .promise()
   
-    // logger.log('Todo exists: ', result)
+    logger.log('Todo exists: ', {result})
     return !!result.Item
   }
 
@@ -93,6 +93,25 @@ constructor(
       ExpressionAttributeValues: {
         ':a' : `https://${this.attachmentsBucket}.s3.amazonaws.com/${todoId}`
       }
+    }).promise()
+  }
+
+  async logMetric(totalTime: number, service: string): Promise<void> {
+    await this.cloudWatch.putMetricData({
+      MetricData: [
+        {
+          MetricName: 'Latency',
+          Dimensions: [
+            {
+              Name: service,
+              Value: this.serviceName
+            }
+          ],
+          Unit: 'Milliseconds',
+          Value: totalTime
+        }
+      ],
+      Namespace: 'Udacity/Todo'
     }).promise()
   }
 }

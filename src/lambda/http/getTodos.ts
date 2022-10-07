@@ -1,12 +1,19 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import 'source-map-support/register'
-import { getAllUserTodos } from '../../helpers/todos'
+import { getAllUserTodos, timeInMs, logMetric } from '../../helpers/todos'
+import { createLogger } from '../../utils/logger'
 
+const logger = createLogger('TodosAccess')
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.info('Processing event: ', event)
+  logger.info('Processing get event: ', { event })
+  const startTime = timeInMs()
 
   const items = await getAllUserTodos(event)
+
+  const endTime = timeInMs()
+  const totalTime = endTime - startTime
+  await logMetric(totalTime, "getTodos");
 
   return {
     statusCode: 200,

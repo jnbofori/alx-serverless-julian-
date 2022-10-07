@@ -1,11 +1,15 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import 'source-map-support/register'
 import { getUserId } from '../utils'
-import { updateTodo, todoExists } from '../../helpers/todos'
+import { updateTodo, todoExists, timeInMs, logMetric } from '../../helpers/todos'
+import { createLogger } from '../../utils/logger'
 
+const logger = createLogger('TodosAccess')
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.log('Updating item', event)
+  logger.log('Updating item', { event })
+  const startTime = timeInMs()
+
   const todoId = event.pathParameters.todoId
   const userId = getUserId(event);
 
@@ -26,6 +30,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   }
 
   const todo = await updateTodo(parsedBody, event, todoId)
+
+  const endTime = timeInMs()
+  const totalTime = endTime - startTime
+  await logMetric(totalTime, "updateTodo");
 
   return {
     statusCode: 201,
